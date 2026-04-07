@@ -61,11 +61,13 @@ export class OutcomeStore {
     const ledger = this.ledgers.get(report.invoiceId);
 
     if (!ledger) {
-      throw new Error("invoiceId was not found");
+      throw new Error(`Invoice ${report.invoiceId} was not found`);
     }
 
     if (ledger.outcomeType !== report.outcomeType) {
-      throw new Error("outcomeType does not match the registered invoice");
+      throw new Error(
+        `Outcome type '${report.outcomeType}' does not match registered invoice type '${ledger.outcomeType}'`
+      );
     }
 
     const entry: OutcomeReportEntry = {

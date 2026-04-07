@@ -86,7 +86,7 @@ test("auction workflow ranks bids, records outcomes, and updates analytics", asy
         outcomeCount: 5,
         settlementAddress: "0xchallenger",
         settlementNetwork: "base",
-        currency: "USDC"
+        currency: "usdc"
       })
     });
 

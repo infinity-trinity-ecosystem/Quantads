@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+const SettlementCurrencySchema = z
+  .string()
+  .regex(/^[a-zA-Z]{3,5}$/, "currency must be 3-5 alphabetic characters")
+  .transform((value) => value.toUpperCase());
+
 // ── Contextual Ads ────────────────────────────────────────────────────────────
 
 export const ContextualAdRequestSchema = z.object({
@@ -61,7 +66,7 @@ export const AuctionBidRequestSchema = z.object({
   outcomeCount: z.number().int().positive(),
   settlementAddress: z.string().min(1),
   settlementNetwork: z.string().min(1),
-  currency: z.string().min(3).max(5).toUpperCase().optional(),
+  currency: SettlementCurrencySchema.optional(),
   reservePrice: z.number().positive().optional(),
   priorityBoost: z.number().positive().optional(),
   expectedRevenuePerOutcome: z.number().positive().optional(),
@@ -70,7 +75,7 @@ export const AuctionBidRequestSchema = z.object({
       payerWallet: z.string().min(1),
       transactionHash: z.string().min(1),
       amount: z.number().positive(),
-      currency: z.string().min(3).max(5).toUpperCase()
+      currency: SettlementCurrencySchema
     })
     .optional()
 });
@@ -85,7 +90,7 @@ export const OutcomePaymentRequestSchema = z.object({
   unitPrice: z.number().positive(),
   settlementAddress: z.string().min(1),
   settlementNetwork: z.string().min(1),
-  currency: z.string().min(3).max(5).toUpperCase().optional()
+  currency: SettlementCurrencySchema.optional()
 });
 
 export const OutcomeReportRequestSchema = z.object({
