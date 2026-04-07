@@ -29,12 +29,14 @@ const clamp = (value: number, minimum: number, maximum: number): number =>
 
 const round = (value: number): number => Number(value.toFixed(2));
 const LTV_RESERVE_DIVISOR = 4;
+const MAX_RESERVE_MULTIPLIER = 1.35;
 const MIN_PRIORITY_BOOST = 0.8;
 const MAX_PRIORITY_BOOST = 1.4;
 const MINIMUM_BID_FLOOR = 0.01;
 const MIN_MARGIN_MULTIPLIER = 0.8;
 const MAX_MARGIN_MULTIPLIER = 3;
 const MINIMUM_BID_INCREMENT = 0.01;
+const DEFAULT_EXPECTED_REVENUE_MULTIPLIER = 2;
 
 export class AuctionEngine {
   private readonly biddingEngine = new BiddingEngine();
@@ -56,10 +58,15 @@ export class AuctionEngine {
     const reservePrice = round(
       request.reservePrice ??
         request.baseOutcomePrice *
-          clamp(request.audience.verifiedLtv / (request.baseOutcomePrice * LTV_RESERVE_DIVISOR), 1, 1.35)
+          clamp(
+            request.audience.verifiedLtv / (request.baseOutcomePrice * LTV_RESERVE_DIVISOR),
+            1,
+            MAX_RESERVE_MULTIPLIER
+          )
     );
     const priorityBoost = clamp(request.priorityBoost ?? 1, MIN_PRIORITY_BOOST, MAX_PRIORITY_BOOST);
-    const expectedRevenuePerOutcome = request.expectedRevenuePerOutcome ?? request.baseOutcomePrice * 2;
+    const expectedRevenuePerOutcome =
+      request.expectedRevenuePerOutcome ?? request.baseOutcomePrice * DEFAULT_EXPECTED_REVENUE_MULTIPLIER;
     const safeFinalBid = Math.max(bidResult.finalBid, MINIMUM_BID_FLOOR);
     const marginMultiplier = clamp(
       expectedRevenuePerOutcome / safeFinalBid,
