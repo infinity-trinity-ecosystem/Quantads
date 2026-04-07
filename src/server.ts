@@ -4,7 +4,9 @@ import { BiddingEngine, OutcomeBidRequest } from "./bidding/BiddingEngine";
 import { createOutcomeQuote, OutcomePaymentRequest } from "./payments/x402";
 import { TwinSimulationRequest } from "./types";
 import { handleContextualAds } from "./routes/ads";
+import { handleAuctionBid, handleAuctionWinner } from "./routes/auctions";
 import { handleCampaignAnalytics, handleRoiSummary } from "./routes/analytics";
+import { handleOutcomeLookup, handleOutcomeReport } from "./routes/outcomes";
 import { logger } from "./lib/logger";
 import {
   OutcomeBidRequestSchema,
@@ -57,6 +59,26 @@ export const app = createServer(async (request, response) => {
     // Analytics – ROI summary (Quantmail JWT required)
     if (request.method === "GET" && request.url === "/api/v1/analytics/roi") {
       await handleRoiSummary(request, response);
+      return;
+    }
+
+    if (request.method === "POST" && /^\/api\/v1\/auctions\/[^/]+\/bid$/.test(request.url ?? "")) {
+      await handleAuctionBid(request, response);
+      return;
+    }
+
+    if (request.method === "GET" && /^\/api\/v1\/auctions\/[^/]+\/winner$/.test(request.url ?? "")) {
+      await handleAuctionWinner(request, response);
+      return;
+    }
+
+    if (request.method === "POST" && request.url === "/api/v1/outcomes/report") {
+      await handleOutcomeReport(request, response);
+      return;
+    }
+
+    if (request.method === "GET" && /^\/api\/v1\/outcomes\/[^/]+$/.test(request.url ?? "")) {
+      await handleOutcomeLookup(request, response);
       return;
     }
 

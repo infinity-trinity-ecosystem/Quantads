@@ -96,3 +96,131 @@ export interface TwinSimulationResponse {
     quantchatBonusEligible?: boolean;
   }>;
 }
+
+export interface AudiencePricingSignal {
+  verifiedLtv: number;
+  intentScore: number;
+  conversionRate: number;
+  recencyMultiplier?: number;
+}
+
+export interface AuctionBidRequest {
+  advertiserId: string;
+  agencyId: string;
+  outcomeType: string;
+  baseOutcomePrice: number;
+  audience: AudiencePricingSignal;
+  marketPressure?: number;
+  floorPrice?: number;
+  maxPrice?: number;
+  riskTolerance?: number;
+  outcomeCount: number;
+  settlementAddress: string;
+  settlementNetwork: string;
+  currency?: string;
+  reservePrice?: number;
+  priorityBoost?: number;
+  expectedRevenuePerOutcome?: number;
+  authorization?: {
+    payerWallet: string;
+    transactionHash: string;
+    amount: number;
+    currency: string;
+  };
+}
+
+export interface AuctionLeaderboardEntry {
+  bidId: string;
+  advertiserId: string;
+  finalBid: number;
+  auctionScore: number;
+  rank: number;
+  paymentStatus: "quoted" | "settled";
+  submittedAt: string;
+}
+
+export interface AuctionBidResponse {
+  campaignId: string;
+  bidId: string;
+  advertiserId: string;
+  agencyId: string;
+  outcomeType: string;
+  finalBid: number;
+  reservePrice: number;
+  auctionScore: number;
+  rank: number;
+  isWinning: boolean;
+  recommendedBidToWin: number | null;
+  paymentStatus: "quoted" | "settled";
+  invoiceId: string;
+  leaderboard: AuctionLeaderboardEntry[];
+  quote: {
+    invoiceId: string;
+    totalAmount: number;
+    currency: string;
+    paymentEndpoint: string;
+  };
+}
+
+export interface OutcomeReportRequest {
+  invoiceId: string;
+  outcomeType: string;
+  outcomeCount: number;
+  valueGenerated: number;
+  verifier: string;
+  transactionHash: string;
+  occurredAt?: string;
+}
+
+export interface OutcomeReportEntry {
+  outcomeType: string;
+  outcomeCount: number;
+  valueGenerated: number;
+  verifier: string;
+  transactionHash: string;
+  occurredAt: string;
+}
+
+export interface InvoiceOutcomeLedger {
+  invoiceId: string;
+  campaignId: string;
+  advertiserId: string;
+  agencyId: string;
+  outcomeType: string;
+  quotedOutcomeCount: number;
+  unitPrice: number;
+  quotedAmount: number;
+  paymentStatus: "quoted" | "settled";
+  settledAmount: number | null;
+  reportedOutcomeCount: number;
+  billableOutcomeCount: number;
+  outcomeValueGenerated: number;
+  deliveryProgress: number;
+  roas: number;
+  reports: OutcomeReportEntry[];
+}
+
+export interface OutcomePerformanceSummary {
+  invoices: number;
+  settledInvoices: number;
+  quotedSpend: number;
+  settledSpend: number;
+  projectedOutcomes: number;
+  reportedOutcomes: number;
+  billableOutcomes: number;
+  outcomeValueGenerated: number;
+  outcomeBackedRoas: number;
+  settlementCoverage: number;
+}
+
+export interface AuctionWinnerResponse {
+  campaignId: string;
+  winner: (AuctionLeaderboardEntry & {
+    agencyId: string;
+    outcomeType: string;
+    reservePrice: number;
+    invoiceId: string;
+    delivery?: InvoiceOutcomeLedger;
+  }) | null;
+  leaderboard: AuctionLeaderboardEntry[];
+}
