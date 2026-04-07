@@ -1,4 +1,5 @@
 import { IncomingMessage, ServerResponse } from "node:http";
+import { outcomeStore } from "../lib/outcome-store";
 import { AnalyticsQuerySchema } from "../lib/validation";
 import { withAuth } from "../middleware/auth";
 import { logger } from "../lib/logger";
@@ -99,11 +100,24 @@ export const handleCampaignAnalytics = withAuth(
 
     const series = generateMockMetrics(campaignId, fromDate, toDate);
     const summary = aggregateMetrics(series);
+    const outcomeMetrics = outcomeStore.getPerformanceSummary(
+      campaignId && campaignId !== "all" ? campaignId : undefined
+    );
 
     sendJson(res, 200, {
       campaignId: campaignId ?? "all",
       period: { from: fromDate.toISOString(), to: toDate.toISOString() },
-      summary,
+      summary: {
+        ...summary,
+        recordedOutcomes: outcomeMetrics.reportedOutcomes,
+        billableOutcomes: outcomeMetrics.billableOutcomes,
+        quotedSpend: outcomeMetrics.quotedSpend,
+        settledSpend: outcomeMetrics.settledSpend,
+        outcomeValueGenerated: outcomeMetrics.outcomeValueGenerated,
+        outcomeBackedRoas: outcomeMetrics.outcomeBackedRoas,
+        settlementCoverage: outcomeMetrics.settlementCoverage
+      },
+      outcomeMetrics,
       series
     });
   }
@@ -126,12 +140,13 @@ export const handleRoiSummary = withAuth(
     const campaigns = campaignIds.map((id) => {
       const series = generateMockMetrics(id, fromDate, toDate);
       const metrics = aggregateMetrics(series);
-      return { campaignId: id, ...metrics };
+      return { campaignId: id, ...metrics, outcomeMetrics: outcomeStore.getPerformanceSummary(id) };
     });
 
     const overallSpend = Number(campaigns.reduce((s, c) => s + c.spend, 0).toFixed(2));
     const overallRevenue = Number(campaigns.reduce((s, c) => s + c.revenue, 0).toFixed(2));
     const overallRoas = overallSpend > 0 ? Number((overallRevenue / overallSpend).toFixed(2)) : 0;
+    const networkOutcomeMetrics = outcomeStore.getPerformanceSummary();
 
     sendJson(res, 200, {
       advertiserId: token.sub,
@@ -139,7 +154,11 @@ export const handleRoiSummary = withAuth(
       overall: {
         spend: overallSpend,
         revenue: overallRevenue,
-        roas: overallRoas
+        roas: overallRoas,
+        recordedOutcomes: networkOutcomeMetrics.reportedOutcomes,
+        quotedSpend: networkOutcomeMetrics.quotedSpend,
+        outcomeValueGenerated: networkOutcomeMetrics.outcomeValueGenerated,
+        outcomeBackedRoas: networkOutcomeMetrics.outcomeBackedRoas
       },
       campaigns
     });

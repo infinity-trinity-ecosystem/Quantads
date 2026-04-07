@@ -43,6 +43,38 @@ export const OutcomeBidRequestSchema = z.object({
   riskTolerance: z.number().min(0).max(1).optional()
 });
 
+export const AuctionBidRequestSchema = z.object({
+  advertiserId: z.string().min(1),
+  agencyId: z.string().min(1),
+  outcomeType: z.string().min(1),
+  baseOutcomePrice: z.number().positive(),
+  audience: z.object({
+    verifiedLtv: z.number().positive(),
+    intentScore: z.number().min(0).max(1),
+    conversionRate: z.number().min(0).max(1),
+    recencyMultiplier: z.number().positive().optional()
+  }),
+  marketPressure: z.number().positive().optional(),
+  floorPrice: z.number().positive().optional(),
+  maxPrice: z.number().positive().optional(),
+  riskTolerance: z.number().min(0).max(1).optional(),
+  outcomeCount: z.number().int().positive(),
+  settlementAddress: z.string().min(1),
+  settlementNetwork: z.string().min(1),
+  currency: z.string().min(3).max(5).toUpperCase().optional(),
+  reservePrice: z.number().positive().optional(),
+  priorityBoost: z.number().positive().optional(),
+  expectedRevenuePerOutcome: z.number().positive().optional(),
+  authorization: z
+    .object({
+      payerWallet: z.string().min(1),
+      transactionHash: z.string().min(1),
+      amount: z.number().positive(),
+      currency: z.string().min(3).max(5).toUpperCase()
+    })
+    .optional()
+});
+
 // ── x402 Payment ─────────────────────────────────────────────────────────────
 
 export const OutcomePaymentRequestSchema = z.object({
@@ -53,7 +85,17 @@ export const OutcomePaymentRequestSchema = z.object({
   unitPrice: z.number().positive(),
   settlementAddress: z.string().min(1),
   settlementNetwork: z.string().min(1),
-  currency: z.string().length(3).toUpperCase().optional()
+  currency: z.string().min(3).max(5).toUpperCase().optional()
+});
+
+export const OutcomeReportRequestSchema = z.object({
+  invoiceId: z.string().min(1),
+  outcomeType: z.string().min(1),
+  outcomeCount: z.number().int().positive(),
+  valueGenerated: z.number().positive(),
+  verifier: z.string().min(1),
+  transactionHash: z.string().min(1),
+  occurredAt: z.string().datetime().optional()
 });
 
 // ── Twin Simulation ───────────────────────────────────────────────────────────
