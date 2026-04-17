@@ -54,7 +54,8 @@ export const OutcomeBidRequestSchema = z.object({
     verifiedLtv: z.number().positive(),
     intentScore: z.number().min(0).max(1),
     conversionRate: z.number().min(0).max(1),
-    recencyMultiplier: z.number().positive().optional()
+    recencyMultiplier: z.number().positive().optional(),
+    attentionScore: z.number().min(0).max(1).optional()
   }),
   marketPressure: z.number().positive().optional(),
   floorPrice: z.number().positive().optional(),
@@ -71,7 +72,8 @@ export const AuctionBidRequestSchema = z.object({
     verifiedLtv: z.number().positive(),
     intentScore: z.number().min(0).max(1),
     conversionRate: z.number().min(0).max(1),
-    recencyMultiplier: z.number().positive().optional()
+    recencyMultiplier: z.number().positive().optional(),
+    attentionScore: z.number().min(0).max(1).optional()
   }),
   marketPressure: z.number().positive().optional(),
   floorPrice: z.number().positive().optional(),
@@ -149,3 +151,28 @@ export const TwinSimulationRequestSchema = z.object({
     quantchatOpenDelaySeconds: z.number().nonnegative().optional()
   })).min(1)
 });
+
+// ── BCI Attention Ingest ──────────────────────────────────────────────────────
+
+export const BciAttentionIngestSchema = z.object({
+  sample: z.object({
+    eyeTrackingScore: z.number().min(0).max(1),
+    heartRate: z.number().min(30).max(220),
+    neuralActivity: z.number().min(0).max(1),
+    recordedAt: z.string().datetime()
+  })
+});
+
+export type BciAttentionIngest = z.infer<typeof BciAttentionIngestSchema>;
+
+// ── HFB Exchange Bid ──────────────────────────────────────────────────────────
+
+export const HFBBidSchema = z.object({
+  bidId: z.string().min(1),
+  advertiserId: z.string().min(1),
+  adSlotId: z.string().min(1),
+  cpcBid: z.number().positive(),
+  attentionScore: z.number().min(0).max(1)
+});
+
+export type HFBBid = z.infer<typeof HFBBidSchema>;

@@ -7,6 +7,9 @@ import { handleContextualAds } from "./routes/ads";
 import { handleAuctionBid, handleAuctionWinner } from "./routes/auctions";
 import { handleCampaignAnalytics, handleRoiSummary } from "./routes/analytics";
 import { handleOutcomeLookup, handleOutcomeReport } from "./routes/outcomes";
+import { handleBciIngest, handleBciAggregated } from "./routes/bci";
+import { handleExchangeBid, handleExchangeStats } from "./routes/exchange";
+import { handleDashboardStream } from "./routes/dashboard";
 import { logger } from "./lib/logger";
 import {
   OutcomeBidRequestSchema,
@@ -79,6 +82,36 @@ export const app = createServer(async (request, response) => {
 
     if (request.method === "GET" && /^\/api\/v1\/outcomes\/[^/]+$/.test(request.url ?? "")) {
       await handleOutcomeLookup(request, response);
+      return;
+    }
+
+    // BCI attention ingest
+    if (request.method === "POST" && request.url === "/api/v1/bci/attention") {
+      await handleBciIngest(request, response);
+      return;
+    }
+
+    // BCI aggregated attention lookup
+    if (request.method === "GET" && /^\/api\/v1\/bci\/attention\/[^/]+\/aggregated$/.test(request.url ?? "")) {
+      await handleBciAggregated(request, response);
+      return;
+    }
+
+    // HFB exchange bid submission
+    if (request.method === "POST" && request.url === "/api/v1/exchange/bid") {
+      await handleExchangeBid(request, response);
+      return;
+    }
+
+    // HFB exchange stats
+    if (request.method === "GET" && request.url === "/api/v1/exchange/stats") {
+      await handleExchangeStats(request, response);
+      return;
+    }
+
+    // Real-time advertiser analytics dashboard (SSE)
+    if (request.method === "GET" && request.url === "/api/v1/dashboard/stream") {
+      await handleDashboardStream(request, response);
       return;
     }
 

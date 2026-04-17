@@ -3,6 +3,13 @@ export interface AudienceSignal {
   intentScore: number;
   conversionRate: number;
   recencyMultiplier?: number;
+  /**
+   * Real-time BCI (Brain-Computer Interface) composite attention score from the
+   * Quantads attention pipeline.  Range 0.0 (fully distracted) to 1.0 (fully
+   * attentive).  When present, scales the effective CPC via an attention
+   * multiplier [0.6, 1.8].
+   */
+  attentionScore?: number;
 }
 
 export interface OutcomeBidRequest {
@@ -23,6 +30,7 @@ export interface OutcomeBidResult {
     confidenceMultiplier: number;
     marketMultiplier: number;
     riskMultiplier: number;
+    attentionMultiplier: number;
   };
 }
 
@@ -64,12 +72,20 @@ export class BiddingEngine {
     const marketMultiplier = clamp(marketPressure, 0.8, 1.4);
     const riskMultiplier = clamp(1 - riskTolerance * 0.2, 0.75, 1);
 
+    // BCI attention multiplier: maps [0,1] → [0.6,1.8].
+    // Defaults to 1.0 when no real-time biometric signal is available.
+    const attentionMultiplier =
+      audience.attentionScore !== undefined
+        ? clamp(0.6 + audience.attentionScore * 1.2, 0.6, 1.8)
+        : 1.0;
+
     const rawBid =
       baseOutcomePrice *
       ltvMultiplier *
       confidenceMultiplier *
       marketMultiplier *
-      riskMultiplier;
+      riskMultiplier *
+      attentionMultiplier;
     const floorPrice = request.floorPrice ?? baseOutcomePrice * 0.85;
     const maxPrice = request.maxPrice ?? baseOutcomePrice * 3;
     const finalBid = roundCurrency(clamp(rawBid, floorPrice, maxPrice));
@@ -82,7 +98,8 @@ export class BiddingEngine {
         ltvMultiplier: Number(ltvMultiplier.toFixed(3)),
         confidenceMultiplier: Number(confidenceMultiplier.toFixed(3)),
         marketMultiplier: Number(marketMultiplier.toFixed(3)),
-        riskMultiplier: Number(riskMultiplier.toFixed(3))
+        riskMultiplier: Number(riskMultiplier.toFixed(3)),
+        attentionMultiplier: Number(attentionMultiplier.toFixed(3))
       }
     };
   }
