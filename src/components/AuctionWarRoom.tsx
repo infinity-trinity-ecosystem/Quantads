@@ -459,8 +459,17 @@ export class AuctionWarRoomEngine {
       spendVelocity = elapsedS > 0 ? totalSpend / elapsedS : 0;
     }
 
-    // ROI estimate: assumed revenue-per-win is 3× CPM, divide by avg CPM
-    const roiEstimate = avgCpm > 0 ? (avgCpm * 3) / avgCpm : 0;
+    // ROI estimate: (total estimated revenue) / (total estimated spend).
+    // Revenue is estimated at 3× the bid amount for each won impression;
+    // spend is the sum of bid amounts across won / sniper / defense events.
+    const ASSUMED_REVENUE_MULTIPLIER = 3;
+    const totalEstimatedRevenue = wonEvents.reduce(
+      (s, e) => s + e.bidAmount * ASSUMED_REVENUE_MULTIPLIER, 0
+    );
+    const totalEstimatedSpend = allSpendEvents.reduce((s, e) => s + e.bidAmount, 0);
+    const roiEstimate = totalEstimatedSpend > 0
+      ? totalEstimatedRevenue / totalEstimatedSpend
+      : 0;
 
     const sniperActivations  = window.filter((e) => e.type === "sniper_bid").length;
     const defenseActivations = window.filter((e) => e.type === "defense_bid").length;

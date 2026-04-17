@@ -197,7 +197,7 @@ export class CompetitorIntelligenceService {
       competitor = {
         realAdvertiserId: observation.advertiserId,
         competitorId: randomUUID(),
-        vertical: observation.vertical.trim().toLowerCase(),
+        vertical: this.normalizeVertical(observation.vertical),
         history: [],
         lastAlertAt: 0
       };
@@ -233,7 +233,7 @@ export class CompetitorIntelligenceService {
    * competitors in that vertical.
    */
   getPatternsForVertical(vertical: string): BidPattern[] | null {
-    const key = vertical.trim().toLowerCase();
+    const key = this.normalizeVertical(vertical);
     const matching = [...this.competitors.values()].filter((c) => c.vertical === key);
     if (matching.length < MIN_COMPETITORS_FOR_DISCLOSURE) return null;
     return matching.map((c) => this.buildPattern(c));
@@ -263,7 +263,7 @@ export class CompetitorIntelligenceService {
    * Returns null when the k-anonymity threshold is not satisfied.
    */
   getScorecard(advertiserId: string, vertical: string): CompetitiveScorecard | null {
-    const normVertical = vertical.trim().toLowerCase();
+    const normVertical = this.normalizeVertical(vertical);
     const allInVertical = [...this.competitors.values()].filter(
       (c) => c.vertical === normVertical
     );
@@ -302,7 +302,7 @@ export class CompetitorIntelligenceService {
    * Returns a market-level summary for a vertical (k-anonymous).
    */
   getVerticalSummary(vertical: string): VerticalSummary | null {
-    const key = vertical.trim().toLowerCase();
+    const key = this.normalizeVertical(vertical);
     const all = [...this.competitors.values()].filter((c) => c.vertical === key);
     if (all.length < MIN_COMPETITORS_FOR_DISCLOSURE) return null;
 
@@ -345,15 +345,19 @@ export class CompetitorIntelligenceService {
    * recent `limit` entries.
    */
   getAlertsForVertical(vertical: string, limit?: number): MarketEntryAlert[] {
-    const key = vertical.trim().toLowerCase();
+    const key = this.normalizeVertical(vertical);
     const filtered = this.alertLog.filter((a) => a.vertical === key);
     return limit != null ? filtered.slice(-limit) : filtered.slice();
   }
 
   // ── Private helpers ──────────────────────────────────────────────────────────
 
+  private normalizeVertical(vertical: string): string {
+    return vertical.trim().toLowerCase();
+  }
+
   private keyFor(advertiserId: string, vertical: string): string {
-    return `${advertiserId}::${vertical.trim().toLowerCase()}`;
+    return `${advertiserId}::${this.normalizeVertical(vertical)}`;
   }
 
   private averageBidFor(competitor: InternalCompetitor): number {
