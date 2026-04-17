@@ -117,6 +117,22 @@ export const OutcomeReportRequestSchema = z.object({
   occurredAt: z.string().datetime().optional()
 });
 
+// ── BCI Attention Signal ──────────────────────────────────────────────────────
+
+export const BciAttentionSignalSchema = z.object({
+  userId: z.string().min(1),
+  sessionId: z.string().min(1),
+  platform: z.enum(["quanttube", "quantedits", "quantchill", "quantchat", "quantmail", "quantbrowse"]),
+  campaignId: z.string().min(1).optional(),
+  attentionScore: z.number().min(0).max(1),
+  engagementScore: z.number().min(0).max(1),
+  focusScore: z.number().min(0).max(1),
+  adExposureMs: z.number().int().nonnegative().optional(),
+  occurredAt: z.string().datetime().optional()
+});
+
+export type BciAttentionSignalInput = z.infer<typeof BciAttentionSignalSchema>;
+
 // ── Twin Simulation ───────────────────────────────────────────────────────────
 
 export const CoordinateSchema = z.object({

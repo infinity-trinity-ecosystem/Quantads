@@ -114,14 +114,11 @@ function scoreCandidate(
   ).length;
 
   const tagScore = tagMatches / Math.max(candidate.contextTags.length, 1);
-
-  // Platform affinity bonus
   const platformBonus = getPlatformBonus(candidate.campaignId, vector.platform);
-
-  // Mood multiplier (purchaseIntent boosts bid value, not PII)
   const moodBoost = vector.moodSignals.purchaseIntent ?? 0.5;
 
-  return Number(((tagScore * 0.6 + platformBonus * 0.2 + moodBoost * 0.2)).toFixed(4));
+  // Weighted composite: semantic tag match (60%) + platform affinity (20%) + purchase intent (20%)
+  return Number((tagScore * 0.6 + platformBonus * 0.2 + moodBoost * 0.2).toFixed(4));
 }
 
 function getPlatformBonus(campaignId: string, platform: string): number {
@@ -145,6 +142,21 @@ function toAudienceSignal(relevanceScore: number, vector: ContextualVector): Aud
   };
 }
 
+/** Builds the sponsored-content payload for a single candidate. */
+function buildSponsoredContent(candidate: ContextualAdCandidate): PrivacyFirstBidResult["sponsoredContent"] {
+  return SPONSORED_CONTENT[candidate.campaignId] ?? {
+    headline: candidate.title,
+    body: "",
+    ctaLabel: "Learn More",
+    ctaUrl: "#"
+  };
+}
+
+/** Derives the final bid price from the audience signal and relevance score. */
+function deriveBidPrice(signal: AudienceSignal, relevanceScore: number): number {
+  return Number((signal.verifiedLtv * signal.intentScore * relevanceScore).toFixed(2));
+}
+
 /**
  * Selects and ranks contextual ad candidates for a given vector.
  * PII never enters this function – only the activity context and mood signals.
@@ -163,21 +175,13 @@ export function selectContextualAds(
 
   return scored.map((candidate) => {
     const signal = toAudienceSignal(candidate.relevanceScore, vector);
-    const bidPrice = Number(
-      (signal.verifiedLtv * signal.intentScore * candidate.relevanceScore).toFixed(2)
-    );
 
     return {
       campaignId: candidate.campaignId,
       adFormat: candidate.adFormat,
-      bidPrice,
+      bidPrice: deriveBidPrice(signal, candidate.relevanceScore),
       relevanceScore: candidate.relevanceScore,
-      sponsoredContent: SPONSORED_CONTENT[candidate.campaignId] ?? {
-        headline: candidate.title,
-        body: "",
-        ctaLabel: "Learn More",
-        ctaUrl: "#"
-      },
+      sponsoredContent: buildSponsoredContent(candidate),
       piiUsed: false as const
     };
   });

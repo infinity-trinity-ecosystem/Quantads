@@ -7,6 +7,7 @@ import { handleContextualAds } from "./routes/ads";
 import { handleAuctionBid, handleAuctionWinner } from "./routes/auctions";
 import { handleCampaignAnalytics, handleRoiSummary } from "./routes/analytics";
 import { handleOutcomeLookup, handleOutcomeReport } from "./routes/outcomes";
+import { handleBciIngest, handleBciAggregated } from "./routes/bci";
 import { logger } from "./lib/logger";
 import {
   OutcomeBidRequestSchema,
@@ -15,11 +16,6 @@ import {
 } from "./lib/validation";
 
 const biddingEngine = new BiddingEngine();
-
-const sendJson = (response: ServerResponse, statusCode: number, body: unknown): void => {
-  response.writeHead(statusCode, { "content-type": "application/json; charset=utf-8" });
-  response.end(JSON.stringify(body));
-};
 
 const readJson = async (request: IncomingMessage): Promise<unknown> => {
   const chunks: Buffer[] = [];
@@ -38,9 +34,19 @@ const readJson = async (request: IncomingMessage): Promise<unknown> => {
 export const app = createServer(async (request, response) => {
   const start = Date.now();
 
+  // Wraps sendJson to include X-Response-Time measured from the start of the request.
+  // Used only for direct server.ts responses; route handlers emit their own responses.
+  const sendJsonTimed = (statusCode: number, body: unknown): void => {
+    response.writeHead(statusCode, {
+      "content-type": "application/json; charset=utf-8",
+      "X-Response-Time": `${Date.now() - start}ms`
+    });
+    response.end(JSON.stringify(body));
+  };
+
   try {
     if (request.method === "GET" && request.url === "/health") {
-      sendJson(response, 200, { status: "ok", service: "quantads" });
+      sendJsonTimed(200, { status: "ok", service: "quantads" });
       return;
     }
 
@@ -82,16 +88,31 @@ export const app = createServer(async (request, response) => {
       return;
     }
 
+    // BCI attention-tracking ingestion (Quantmail JWT required)
+    if (request.method === "POST" && request.url === "/api/v1/bci/attention") {
+      await handleBciIngest(request, response);
+      return;
+    }
+
+    // BCI aggregated metrics lookup (Quantmail JWT required)
+    if (
+      request.method === "GET" &&
+      /^\/api\/v1\/bci\/attention\/[^/]+\/aggregated$/.test(request.url ?? "")
+    ) {
+      await handleBciAggregated(request, response);
+      return;
+    }
+
     // Geofence-based twin simulation
     if (request.method === "POST" && request.url === "/api/v1/twin-sim") {
       const raw = await readJson(request);
       const parsed = TwinSimulationRequestSchema.safeParse(raw);
       if (!parsed.success) {
         const errors = parsed.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`);
-        sendJson(response, 422, { error: "Validation failed", details: errors });
+        sendJsonTimed(422, { error: "Validation failed", details: errors });
         return;
       }
-      sendJson(response, 200, simulateTwinAudience(parsed.data as TwinSimulationRequest));
+      sendJsonTimed(200, simulateTwinAudience(parsed.data as TwinSimulationRequest));
       return;
     }
 
@@ -101,11 +122,11 @@ export const app = createServer(async (request, response) => {
       const parsed = OutcomeBidRequestSchema.safeParse(raw);
       if (!parsed.success) {
         const errors = parsed.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`);
-        sendJson(response, 422, { error: "Validation failed", details: errors });
+        sendJsonTimed(422, { error: "Validation failed", details: errors });
         return;
       }
       const result = biddingEngine.calculateOutcomeBid(parsed.data as OutcomeBidRequest);
-      sendJson(response, 200, result);
+      sendJsonTimed(200, result);
       return;
     }
 
@@ -115,21 +136,22 @@ export const app = createServer(async (request, response) => {
       const parsed = OutcomePaymentRequestSchema.safeParse(raw);
       if (!parsed.success) {
         const errors = parsed.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`);
-        sendJson(response, 422, { error: "Validation failed", details: errors });
+        sendJsonTimed(422, { error: "Validation failed", details: errors });
         return;
       }
-      sendJson(response, 200, createOutcomeQuote(parsed.data as OutcomePaymentRequest));
+      sendJsonTimed(200, createOutcomeQuote(parsed.data as OutcomePaymentRequest));
       return;
     }
 
-    sendJson(response, 404, { error: "Not found" });
+    sendJsonTimed(404, { error: "Not found" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     logger.error({ err: message, method: request.method, url: request.url }, "request error");
-    sendJson(response, 400, { error: message });
+    sendJsonTimed(400, { error: message });
   } finally {
+    const durationMs = Date.now() - start;
     logger.info(
-      { method: request.method, url: request.url, durationMs: Date.now() - start },
+      { method: request.method, url: request.url, durationMs },
       "request"
     );
   }

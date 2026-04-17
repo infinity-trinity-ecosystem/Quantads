@@ -38,6 +38,11 @@ model Campaign {
   impressions  Impression[]
   clicks       Click[]
   contextualVectors ContextualVector[]
+  bciEvents    BciAttentionEvent[]
+
+  @@index([advertiserId])
+  @@index([status])
+  @@index([outcomeType])
 }
 
 enum CampaignStatus {
@@ -56,6 +61,10 @@ model Impression {
   adFormat     String    // "contextual-story" | "product-placement" | "native-card"
   occurredAt   DateTime  @default(now())
   clicks       Click[]
+
+  @@index([campaignId])
+  @@index([userId])
+  @@index([occurredAt])
 }
 
 model Click {
@@ -67,6 +76,10 @@ model Click {
   userId       String
   occurredAt   DateTime   @default(now())
   outcome      String?    // fulfilled outcome type once tracked
+
+  @@index([campaignId])
+  @@index([impressionId])
+  @@index([userId])
 }
 
 // ContextualVector stores the user's current mood/activity state.
@@ -80,4 +93,28 @@ model ContextualVector {
   moodSignals     Json      // { energyLevel, curiosity, purchaseIntent }
   embeddingHash   String    // hash of the semantic embedding – no raw text
   createdAt       DateTime  @default(now())
+
+  @@index([campaignId])
+  @@index([platform])
+}
+
+// BciAttentionEvent stores aggregated BCI attention signals for a session.
+// Raw neural data is never persisted – only derived attention scores.
+model BciAttentionEvent {
+  id              String    @id @default(uuid())
+  userId          String    // opaque user ID – no PII stored
+  campaign        Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  campaignId      String?
+  platform        String
+  sessionId       String
+  attentionScore  Float     // 0–1 normalised attention level
+  engagementScore Float     // 0–1 normalised engagement level
+  focusScore      Float     // 0–1 normalised cognitive focus
+  adExposureMs    Int?      // milliseconds of ad exposure during this signal window
+  occurredAt      DateTime  @default(now())
+
+  @@index([userId])
+  @@index([campaignId])
+  @@index([sessionId])
+  @@index([occurredAt])
 }

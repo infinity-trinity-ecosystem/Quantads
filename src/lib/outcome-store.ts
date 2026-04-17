@@ -70,6 +70,16 @@ export class OutcomeStore {
       );
     }
 
+    const alreadyRecorded = ledger.reports.some(
+      (entry) => entry.transactionHash === report.transactionHash
+    );
+
+    if (alreadyRecorded) {
+      throw new Error(
+        `Outcome with transactionHash '${report.transactionHash}' has already been recorded for invoice '${report.invoiceId}'`
+      );
+    }
+
     const entry: OutcomeReportEntry = {
       outcomeType: report.outcomeType,
       outcomeCount: report.outcomeCount,

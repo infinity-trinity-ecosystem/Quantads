@@ -224,3 +224,31 @@ export interface AuctionWinnerResponse {
   }) | null;
   leaderboard: AuctionLeaderboardEntry[];
 }
+
+// ── BCI Attention Tracking ─────────────────────────────────────────────────────
+
+export interface BciAttentionSignal {
+  userId: string;     // opaque – no PII
+  sessionId: string;
+  platform: string;
+  campaignId?: string;
+  attentionScore: number;   // 0–1
+  engagementScore: number;  // 0–1
+  focusScore: number;       // 0–1
+  adExposureMs?: number;
+  occurredAt?: string;
+}
+
+export interface BciIngestionResponse {
+  signalId: string;
+  userId: string;
+  sessionId: string;
+  platform: string;
+  campaignId?: string;
+  attentionScore: number;
+  engagementScore: number;
+  focusScore: number;
+  adExposureMs?: number;
+  occurredAt: string;
+  compositeScore: number;
+}
