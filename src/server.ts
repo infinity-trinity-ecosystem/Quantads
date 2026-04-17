@@ -16,6 +16,14 @@ import {
 import { handleOutcomeLookup, handleOutcomeReport } from "./routes/outcomes";
 import { handleBciIngest, handleBciAggregated } from "./routes/bci";
 import {
+  handleSmartAdRender,
+  handleEmotionIngest,
+  handleSmartAdPreview,
+  handleAbImpression,
+  handleAbClick,
+  handleAbMetrics
+} from "./routes/smart-ads";
+import {
   handleCreateCampaign,
   handleListCampaigns,
   handleUpdateCampaign,
@@ -184,6 +192,44 @@ export const app = createServer(async (request, response) => {
       /^\/api\/v1\/bci\/attention\/[^/]+\/aggregated$/.test(request.url ?? "")
     ) {
       await handleBciAggregated(request, response);
+      return;
+    }
+
+    // ── Smart Ads ─────────────────────────────────────────────────────────────
+
+    // POST /api/v1/smart-ads/render — compose adaptive ad creative
+    if (request.method === "POST" && request.url === "/api/v1/smart-ads/render") {
+      await handleSmartAdRender(request, response);
+      return;
+    }
+
+    // POST /api/v1/smart-ads/emotion — ingest behavioural sample
+    if (request.method === "POST" && request.url === "/api/v1/smart-ads/emotion") {
+      await handleEmotionIngest(request, response);
+      return;
+    }
+
+    // GET /api/v1/smart-ads/preview — advertiser preview page
+    if (request.method === "GET" && (request.url === "/api/v1/smart-ads/preview" || request.url?.startsWith("/api/v1/smart-ads/preview?"))) {
+      await handleSmartAdPreview(request, response);
+      return;
+    }
+
+    // POST /api/v1/smart-ads/ab/impression
+    if (request.method === "POST" && request.url === "/api/v1/smart-ads/ab/impression") {
+      await handleAbImpression(request, response);
+      return;
+    }
+
+    // POST /api/v1/smart-ads/ab/click
+    if (request.method === "POST" && request.url === "/api/v1/smart-ads/ab/click") {
+      await handleAbClick(request, response);
+      return;
+    }
+
+    // GET /api/v1/smart-ads/ab/metrics
+    if (request.method === "GET" && (request.url === "/api/v1/smart-ads/ab/metrics" || request.url?.startsWith("/api/v1/smart-ads/ab/metrics?"))) {
+      await handleAbMetrics(request, response);
       return;
     }
 
