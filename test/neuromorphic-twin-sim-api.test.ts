@@ -18,7 +18,7 @@ test("POST /api/v1/twin-sim supports neuromorphic surface, insertion, and engage
       mode: "neuromorphic",
       campaign: {
         id: "cmp-neuro-001",
-        title: "Invisible Coffee Embed"
+        title: "Neuromorphic Coffee Embed"
       },
       frames: [
         {

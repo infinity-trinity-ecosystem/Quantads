@@ -28,7 +28,7 @@ function buildPlane(candidate: SurfaceCandidateInput, frame: TwinFrameInput): Ne
   };
 }
 
-function mapTemperatureKelvin(luma: number): number {
+function estimateColorTemperatureFromLuma(luma: number): number {
   const normalized = clamp(luma, 0, 1);
   return Math.round(4600 + normalized * 2200);
 }
@@ -61,7 +61,7 @@ export class SurfaceDetector {
           },
           lighting: {
             luma: clamp(candidate.luma, 0, 1),
-            temperatureKelvin: mapTemperatureKelvin(candidate.luma)
+            temperatureKelvin: estimateColorTemperatureFromLuma(candidate.luma)
           },
           occlusionMap: {
             blockedRatio: occlusionPenalty,

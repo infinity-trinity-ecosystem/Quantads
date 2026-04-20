@@ -8,7 +8,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function sortSurfaces(surfaces: NeuromorphicDetectedSurface[]): NeuromorphicDetectedSurface[] {
+function sortSurfacesByConfidenceDescending(surfaces: NeuromorphicDetectedSurface[]): NeuromorphicDetectedSurface[] {
   return [...surfaces].sort((a, b) => {
     if (b.confidence !== a.confidence) {
       return b.confidence - a.confidence;
@@ -50,7 +50,7 @@ export class ProductInsertion {
       return [];
     }
 
-    const ranked = sortSurfaces(surfaces);
+    const ranked = sortSurfacesByConfidenceDescending(surfaces);
     const usedSurfaceIds = new Set<string>();
 
     return assets.flatMap((asset, assetIndex) => {

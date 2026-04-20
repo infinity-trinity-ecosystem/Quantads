@@ -50,8 +50,7 @@ export class NativeTracking {
       const events = [...session.focusEvents].sort((a, b) => a.timestampMs - b.timestampMs);
 
       for (let index = 0; index < events.length; index += 1) {
-        const event = events[index];
-        if (!event) continue;
+        const event = events[index]!;
 
         const currentInsertions = insertionByFrame.get(event.frameId);
         if (!currentInsertions || currentInsertions.length === 0) {
