@@ -288,6 +288,56 @@ export const HFBBidSchema = z.object({
 
 export type HFBBid = z.infer<typeof HFBBidSchema>;
 
+// ── Yield Arbitrage ─────────────────────────────────────────────────────────────
+
+const YieldCreativeStyleSchema = z.enum(["micro-burst", "narrative", "native-card", "rewarded"]);
+const YieldSlotFormatSchema = z.enum(["display", "video", "native", "rewarded"]);
+
+export const YieldArbitrageRequestSchema = z.object({
+  advertiserId: z.string().min(1),
+  auctionId: z.string().min(1),
+  slotId: z.string().min(1),
+  baseOutcomePrice: z.number().positive(),
+  timeoutBudgetMs: z.number().positive().max(25).optional(),
+  audience: z.object({
+    verifiedLtv: z.number().positive(),
+    intentScore: z.number().min(0).max(1),
+    conversionRate: z.number().min(0).max(1),
+    recencyMultiplier: z.number().positive().optional(),
+    attentionScore: z.number().min(0).max(1).optional()
+  }),
+  pulse: z.object({
+    attentionDepth: z.number().min(0).max(1),
+    cognitiveLoad: z.number().min(0).max(1),
+    dwellTimeMs: z.number().int().nonnegative(),
+    eyeAlignment: z.number().min(0).max(1),
+    scrollVelocity: z.number().min(0).max(2)
+  }),
+  slot: z.object({
+    platform: z.enum(["quanttube", "quantedits", "quantchill", "quantchat", "quantmail", "quantbrowse"]),
+    placementPath: z.string().min(1),
+    adFormat: YieldSlotFormatSchema,
+    floorCpm: z.number().positive(),
+    viewabilityEstimate: z.number().min(0).max(1),
+    preferredCreativeStyle: YieldCreativeStyleSchema.optional()
+  }),
+  bids: z.array(
+    z.object({
+      bidId: z.string().min(1),
+      bidderId: z.string().min(1),
+      campaignId: z.string().min(1),
+      creativeId: z.string().min(1),
+      creativeStyle: YieldCreativeStyleSchema,
+      bidCpm: z.number().positive(),
+      responseLatencyMs: z.number().nonnegative(),
+      predictedCtr: z.number().min(0).max(1),
+      predictedConversionRate: z.number().min(0).max(1),
+      qualityScore: z.number().min(0).max(1),
+      attentionAffinity: z.number().min(0).max(1).optional()
+    })
+  ).min(1)
+});
+
 // ── Campaign Management ───────────────────────────────────────────────────────
 
 export const CampaignTargetingRulesSchema = z.object({

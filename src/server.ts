@@ -60,6 +60,11 @@ import {
   handleBidWarStrategyOptimize
 } from "./routes/bid-war";
 import {
+  handleYieldArbitrageEvaluate,
+  handleYieldDashboardPage,
+  handleYieldDashboardSummary
+} from "./routes/yield";
+import {
   handleCreateCampaign,
   handleListCampaigns,
   handleUpdateCampaign,
@@ -279,6 +284,20 @@ export const app = createServer(async (request, response) => {
     // HFB exchange – throughput / buffer statistics
     if (request.method === "GET" && request.url === "/api/v1/exchange/stats") {
       await handleHfbExchangeStats(request, response);
+      return;
+    }
+
+    // ── Yield Arbitrage (algorithmic ad-yield selection) ──────────────────────
+    if (request.method === "POST" && request.url === "/api/v1/yield/arbitrage/evaluate") {
+      await handleYieldArbitrageEvaluate(request, response);
+      return;
+    }
+    if (request.method === "GET" && request.url === "/api/v1/yield/dashboard") {
+      await handleYieldDashboardSummary(request, response);
+      return;
+    }
+    if (request.method === "GET" && request.url === "/internal/yield-dashboard") {
+      await handleYieldDashboardPage(request, response);
       return;
     }
 
